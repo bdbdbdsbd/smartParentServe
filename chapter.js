@@ -43,7 +43,6 @@ module.exports  = (app)=>{
                         title:ctx.request.body.title,
                     }
                     db.query(sqlInsertUser,contentMessage,(err, results)=>{
-                        // console.log(err,results)
                         if(results.length!=0){
                             ctx.body={status:0,msg:"添加成功"};
                             res()

@@ -17,7 +17,6 @@ module.exports = (app)=>{
         return new Promise((res)=>{
             request('https://api.weixin.qq.com/sns/jscode2session?appid=wxe6b60f6711fb5a28&secret=87b06d51ef1d179d71504ed9d2b68955&js_code='+ctx.request.body.code,(error, response, body)=>{
                 body = JSON.parse(body)
-
                 db.query(sqlSelectUser,body["openid"],(err, results)=>{
                     if(results.length==0){
                         const cryptoMessage = {
@@ -58,7 +57,6 @@ module.exports = (app)=>{
                         res()
                     }else{
                         // 如果有用户
-                        // console.log({...results[0],...body})
                         ctx.body={'status':1,msg:`用户已经存在，姓名 ${results[0].user_name}`,data:{...results[0],...body}}
                         res()
                     }

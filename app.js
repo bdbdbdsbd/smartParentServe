@@ -19,6 +19,7 @@ require('./login.js')(app)
 require('./form.js')(app)
 require('./chapter.js')(app)
 require('./friend.js')(app)
+require('./like.js')(app)
 
 const options = {
     key: fs.readFileSync('./https/9101105_www.bdbdbdsbd.asia.key'),

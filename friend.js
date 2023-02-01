@@ -1,3 +1,4 @@
+const {sql} = require('./sql/sql.js')
 module.exports  = (app)=>{
     const router = require('koa-router')()
     const router2 = require('koa-router')()
@@ -13,56 +14,53 @@ module.exports  = (app)=>{
     const sqlInsertFriend = 'INSERT INTO friend SET ?'
     const sqlDeleteFriend = 'DELETE FROM friend where id=?'
     const sqlSelectUserMessage = 'SELECT user_name,avatar,user_id FROM user where FIND_IN_SET(user_id,?);'
+    const sqlSelectDianzan = 'SELECT content_id,user_id FROM dianzan where  FIND_IN_SET(content_id,?)'
 
     router.post('/get',async ctx=>{
-        return new Promise((res)=>{
-            db.query(sqlSelectFriend,[ctx.request.body.index,ctx.request.body.limit],(err,results)=>{
-                if (err){
-                    ctx.body = {status:1,msg:"获取失败",data:err}
-                    res()
+        const data = await sql(sqlSelectFriend,[ctx.request.body.index,ctx.request.body.limit])
+        switch(data.status){
+            // 失败
+            case "fail":
+                ctx.body = {status:1,msg:"获取失败",data:data.data}
+                break
+            case "success":
+                const user_id = data.data.reduce((pre,cur)=>{
+                    return [...pre,cur.user_id]
+                },[])
+                let userMessage = data.data
+                const data1 = await sql(sqlSelectUserMessage,user_id.toString())
+                switch(data1.status){
+                    case "fail":
+                        ctx.body = {status:1,msg:"获取失败",data:data1.data}
+                        break
+                    case "success":
+                        // id 头像对应关系
+                        const idMessage = data1.data.reduce((pre,cur)=>{
+                            if(cur.user_id in pre){
+                                return pre
+                            }else{
+                                let {user_name,avatar} = {...cur}
+                                pre[""+cur.user_id] = {user_name,avatar}
+                                return pre
+                            }
+                        },{})
+                        const data2 = await sql()
+                        // add user_name avatar信息
+                        userMessage.forEach(element => {
+                            element["user_name"] = idMessage[element["user_id"]]["user_name"] 
+                            element["avatar"] = idMessage[element["user_id"]]["avatar"] 
+                        });
+                        ctx.body = {status:0,msg:"获取成功",data:userMessage}
+                        break
+                    case "blank":
+                        ctx.body = {status:1,msg:"获取失败"}
+                        break
                 }
-                if(results.length==0){
-                    ctx.body = {status:1,msg:"朋友圈为空"}
-                    res()              
-                }else{
-                    const user_id = results.reduce((pre,cur)=>{
-                        return [...pre,cur.user_id]
-                    },[])
-                    let userMessage = results
-                    db.query(sqlSelectUserMessage,user_id.toString(),(err,results)=>{
-                        if(err){
-                            ctx.body = {status:1,msg:"获取失败",data:err}
-                            res() 
-                        }
-                        if(results.length!=0){
-                            const idMessage = results.reduce((pre,cur)=>{
-
-                                if(cur.user_id in pre){
-                                    return pre
-                                }else{
-                                    let {user_name,avatar} = {...cur}
-                                    pre[""+cur.user_id] = {user_name,avatar}
-                                    return pre
-                                }
-                            },{})
-
-                            userMessage.forEach(element => {
-                                element["user_name"] = idMessage[element["user_id"]]["user_name"] 
-                                element["avatar"] = idMessage[element["user_id"]]["avatar"] 
-                            });
-
-                            ctx.body = {status:0,msg:"获取成功",data:userMessage}
-                            res() 
-                        }else{
-                            ctx.body = {status:1,msg:"获取失败"}
-                            res() 
-                        }
-
-                    })
-     
-                }
-            })
-        })
+                break
+            case "blank":
+                ctx.body = {status:1,msg:"朋友圈为空"}
+                break
+        }
     })
 
     router.post('/delete',async ctx=>{
