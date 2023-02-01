@@ -28,7 +28,9 @@ module.exports  = (app)=>{
                     return [...pre,cur.user_id]
                 },[])
                 let userMessage = data.data
+                console.log(sqlSelectUserMessage,user_id.toString())
                 const data1 = await sql(sqlSelectUserMessage,user_id.toString())
+                console.log('data1',data1)
                 switch(data1.status){
                     case "fail":
                         ctx.body = {status:1,msg:"获取失败",data:data1.data}
@@ -44,7 +46,6 @@ module.exports  = (app)=>{
                                 return pre
                             }
                         },{})
-                        const data2 = await sql()
                         // add user_name avatar信息
                         userMessage.forEach(element => {
                             element["user_name"] = idMessage[element["user_id"]]["user_name"] 
